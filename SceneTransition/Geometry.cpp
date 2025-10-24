@@ -2,6 +2,11 @@
 #include <DxLib.h>
 #include <cmath>
 
+void Circle :: Draw()
+{
+	DrawCircleAA(pos.x, pos.y, r, 16, 0xffffff, false, 2.0f);
+}
+
 Vector2 Vector2::operator-()const
 {
 	//ƒxƒNƒgƒ‹‚ð”½“]‚³‚¹‚é

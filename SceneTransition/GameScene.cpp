@@ -11,10 +11,15 @@ constexpr int player_cut_w = 16;
 constexpr int player_cut_h = 24;
 constexpr int bullet_cut_w = 16;
 constexpr int bullet_cut_h = 16;
+constexpr int exp_cut_w = 16;
+constexpr int exp_cut_h = 16;
+
 constexpr int fade_interval = 60;
 constexpr float player_speed = 4.0f;	//プレイヤーの移動速度
-
 constexpr float player_shot_speed = 8.0f;//プレイヤーの弾の速度
+constexpr float player_scale = 2.0f;	//プレイヤー画像のスケーリング
+constexpr int explosion_frame = 30;//爆発に要するフレーム数
+constexpr float exp_scale = 4.0f;//爆発スケール
 
 constexpr float enemy_speed = 2.0f;	//敵の移動速度
 constexpr float enemy_bullet_speed = 4.0f;//敵の弾の速度
@@ -22,11 +27,26 @@ constexpr int enemy_cut_w = 16;
 constexpr int enemy_cut_h = 16;
 constexpr float enemy_scale = 2.5f;
 
-constexpr float player_scale = 2.0f;	//プレイヤー画像のスケーリング
+/// <summary>
+/// 2つの円が交差しているかどうかを返す
+/// </summary>
+/// <param name="a">円a</param>
+/// <param name="b">円b</param>
+/// <returns>当たってたらtrue / 当たってないならfalse</returns>
+bool GameScene::IsHit(const Circle& a, const Circle& b)
+{
+	//①円aの中心から円bの中心へベクトルを引く
+	auto vec = b.pos - a.pos;
+	//②①で作ったベクトルの大きさをはかる
+	float d = vec.Length();
+	//③その大きさがそれぞれの円の半径を足したものより大きければ
+	//当たっていない
+	return d<=a.r + b.r;
+}
 
 GameScene::GameScene(SceneController& controller) :
-	Scene(controller), playerPos{ 320,400 },
-	enemyPos_{ 0,50 },
+	Scene(controller), player_{ { 320,400 },10.0f },
+	enemy_{ {0,50},10.0f },
 	enemyVel_{ enemy_speed,0 },
 	update_(&GameScene::FadeInUpdate),
 	draw_(&GameScene::FadeDraw),
@@ -48,6 +68,9 @@ GameScene::GameScene(SceneController& controller) :
 
 	enemyH_ = LoadGraph(L"img/game/zako.png");
 	assert(enemyH_ >= 0);
+
+	explosionH_ = LoadGraph(L"img/game/explosion.png");
+	assert(explosionH_ >= 0);
 
 	frame_ = fade_interval;
 }
@@ -88,7 +111,12 @@ void GameScene::NormalUpdate(Input& input)
 	{
 		vel.x = -1.0f;
 	}
-	playerPos += vel.Normalized() * player_speed;
+	//爆発中は死んでるから動けない
+	if (playerExplosionFrame_ == 0)
+	{
+		player_.pos += vel.Normalized() * player_speed;
+	}
+	
 
 	//プレイヤーの弾の制御
 	if (input.IsTriggerd("shot"))
@@ -99,29 +127,17 @@ void GameScene::NormalUpdate(Input& input)
 			if (shot.isDead)
 			{
 				shot.isDead = false;//弾の復活
-				shot.shotPos = playerPos;//弾の開始地点
+				shot.circle.pos = player_.pos;//弾の開始地点
 				shot.shotVel = { 0.0f,-player_shot_speed };//弾の速度
 				break;
 			}
 		}
 	}
-	//プレイヤー弾の座標の更新
-	for (auto& shot : shots_)
-	{
-		if (!shot.isDead)
-		{
-			shot.shotPos += shot.shotVel;
-			if (shot.shotPos.y < -bullet_cut_h * player_scale)
-			{
-				shot.isDead = true;//画面買いに出たらまた無効にする(再利用可能にする)
-			}
-		}
-	}
 	const auto& wsize = Application::GetInstance().GetWindowSize();
 	//敵の動きの制御
-	enemyPos_ += enemyVel_;
-	if ((enemyVel_.x > 0.0f && enemyPos_.x > wsize.w - enemy_cut_w * enemy_scale / 2.0f) ||
-		(enemyVel_.x < 0.0f && enemyPos_.x < enemy_cut_w * enemy_scale / 2.0f))
+	enemy_.pos += enemyVel_;
+	if ((enemyVel_.x > 0.0f && enemy_.pos.x > wsize.w - enemy_cut_w * enemy_scale / 2.0f) ||
+		(enemyVel_.x < 0.0f && enemy_.pos.x < enemy_cut_w * enemy_scale / 2.0f))
 	{
 		enemyVel_.x = -enemyVel_.x;
 	}
@@ -134,8 +150,8 @@ void GameScene::NormalUpdate(Input& input)
 				//敵弾発射の儀
 				if (bullet.isDead) {
 					bullet.isDead = false;
-					bullet.shotPos = enemyPos_;
-					bullet.shotVel = (playerPos - enemyPos_).Normalized() * enemy_bullet_speed;//自機狙い弾
+					bullet.circle.pos = enemy_.pos;
+					bullet.shotVel = (player_ .pos- enemy_.pos).Normalized() * enemy_bullet_speed;//自機狙い弾
 					break;
 				}
 			}
@@ -149,15 +165,14 @@ void GameScene::NormalUpdate(Input& input)
 			constexpr int way_num = 5;//何wayか
 			constexpr float angle_30 = DX_PI_F / 6.0f;
 			//一旦自機狙いの角度を計算します
-			auto vec = playerPos - enemyPos_;//自機狙いベクトル
+			auto vec = player_.pos - enemy_.pos;//自機狙いベクトル
 			auto theta = atan2(vec.y, vec.x) - angle_30*(way_num/2);
 			int count = 0;
 			for (auto& bullet : bullets_) {
 				//敵弾発射の儀
 				if (bullet.isDead) {
 					bullet.isDead = false;
-					bullet.shotPos = enemyPos_;
-					//bullet.shotVel = (playerPos - enemyPos_).Normalized() * enemy_bullet_speed;//自機狙い弾
+					bullet.circle.pos = enemy_.pos;
 					bullet.shotVel = { cos(theta),sin(theta) };
 					bullet.shotVel *= enemy_bullet_speed;
 					theta += angle_30;
@@ -170,19 +185,50 @@ void GameScene::NormalUpdate(Input& input)
 			}
 		}
 	}
+
+	//プレイヤー弾の座標の更新
+	for (auto& shot : shots_)
+	{
+		if (!shot.isDead)
+		{
+			shot.circle.pos += shot.shotVel;
+			if (shot.circle.pos.y < -bullet_cut_h * player_scale)
+			{
+				shot.isDead = true;//画面買いに出たらまた無効にする(再利用可能にする)
+				continue;
+			}
+			//プレイヤー弾と敵の当たり判定
+			if (IsHit(shot.circle, enemy_))
+			{
+				shot.isDead = true;
+				enemyExplosionFrame = explosion_frame;
+			}
+		}
+	}
+	enemyExplosionFrame = max(enemyExplosionFrame - 1, 0);
+
 	//敵の弾の座標更新
 	for (auto& bullet : bullets_)
 	{
 		if (bullet.isDead)continue;
-		bullet.shotPos += bullet.shotVel;
-		if (bullet.shotPos.x < -32 || bullet.shotPos.x > wsize.w + 32 ||
-			bullet.shotPos.y < -32 || bullet.shotPos.y > 480 + 32)
+		bullet.circle.pos += bullet.shotVel;
+		if (bullet.circle.pos.x < -32 || bullet.circle.pos.x > wsize.w + 32 ||
+			bullet.circle.pos.y < -32 || bullet.circle.pos.y > 480 + 32)
 		{
 			//弾は画面外に出たら死ぬ
 			bullet.isDead = true;
+			continue;
+		}
+		//敵の弾と自機の当たり判定
+		if (playerExplosionFrame_ == 0) {
+			if (IsHit(bullet.circle, player_))
+			{
+				bullet.isDead = true;
+				playerExplosionFrame_ = explosion_frame;
+			}
 		}
 	}
-
+	playerExplosionFrame_ = max(playerExplosionFrame_ - 1, 0);
 }
 
 void GameScene::FadeOutUpdate(Input&)
@@ -201,7 +247,7 @@ void GameScene::FadeDraw()
 	//背景
 	DrawExtendGraph(0, 0, 640, 480, backH_, false);
 	//自機表示
-	DrawRectRotaGraph(playerPos.x, playerPos.y,
+	DrawRectRotaGraph(player_.pos.x, player_.pos.y,
 		player_cut_w * 2.0, player_cut_h * 0,
 		player_cut_w, player_cut_h,
 		player_scale, 0.0f, playerH_, true);
@@ -235,34 +281,61 @@ void GameScene::NormalDraw()
 	for (auto& shot : shots_)
 	{
 		if (shot.isDead) continue;
-		DrawRectRotaGraph(shot.shotPos.x,shot.shotPos.y,//表示座標
+		DrawRectRotaGraph(shot.circle.pos.x,shot.circle.pos.y,//表示座標
 			bullet_cut_w * shotImgIdx, bullet_cut_h * 1,//切り取りの左上
 			bullet_cut_w, bullet_cut_h,//切り取りの幅　高
 			player_scale, 0.0f, shotH_, true);
-
 	}
 	int playerImgIdx = (gameFrame_ / 8) % 2;
 	//自機表示
-	DrawRectRotaGraph(playerPos.x, playerPos.y,//プレイヤーの表示座標
-		player_cut_w * 2, player_cut_h * playerImgIdx,//切り取りの左上
-		player_cut_w, player_cut_h,//切り取りの幅　高
-		player_scale, 0.0f, playerH_, true);
+	if (playerExplosionFrame_ == 0)
+	{
+		//爆発していないときだけ表示
+		DrawRectRotaGraph(player_.pos.x, player_.pos.y,//プレイヤーの表示座標
+			player_cut_w * 2, player_cut_h * playerImgIdx,//切り取りの左上
+			player_cut_w, player_cut_h,//切り取りの幅　高
+			player_scale, 0.0f, playerH_, true);
+	}
+	
+	//爆発表示
+	if (playerExplosionFrame_ > 0)
+	{
+		int idx = 4 - (playerExplosionFrame_ / 6);
+		DrawRectRotaGraph(player_.pos.x, player_.pos.y,//プレイヤーの表示座標
+			exp_cut_w * idx, 0,
+			exp_cut_w, exp_cut_h,
+			exp_scale, 0.0f, explosionH_, true);
+	}
 
 	//敵弾表示
 	for (auto& bullet : bullets_)
 	{
 		if (bullet.isDead) continue;
-		DrawRectRotaGraph(bullet.shotPos.x,bullet.shotPos.y,
+		DrawRectRotaGraph(bullet.circle.pos.x,bullet.circle.pos.y,
 			bullet_cut_w * shotImgIdx, bullet_cut_h * 0,
 			bullet_cut_w, bullet_cut_h,
 			player_scale, 0.0f, shotH_, true);
 	}
+
 	int enemyImgIdx = (gameFrame_ / 6) % 2;
 	//敵表示
-	DrawRectRotaGraph(enemyPos_.x, enemyPos_.y,
+	DrawRectRotaGraph(enemy_.pos.x, enemy_.pos.y,
 		enemy_cut_w * enemyImgIdx, enemy_cut_h * 0,
 		enemy_cut_w, enemy_cut_h,
 		enemy_scale, 0.0f, enemyH_, true);
+
+	//敵爆発表示
+	int enemyExpOffsetX = GetRand(10) - 5;
+	int enemyExpOffsetY = GetRand(10) - 5;
+	
+	if (enemyExplosionFrame > 0)
+	{
+		int idx = 4 - (enemyExplosionFrame / 6);
+		DrawRectRotaGraph(enemy_.pos.x + enemyExpOffsetX, enemy_.pos.y + enemyExpOffsetY,//プレイヤーの表示座標
+			exp_cut_w * idx, 0,
+			exp_cut_w, exp_cut_h,
+			exp_scale, 0.0f, explosionH_, true);
+	}
 }
 
 void GameScene::Update(Input& input)

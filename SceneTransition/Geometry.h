@@ -29,3 +29,13 @@ struct Size
 	int w;///幅　
 	int h;///高さ
 };
+
+/// <summary>
+/// 円を表す構造体
+/// </summary>
+struct Circle
+{
+	Position2 pos;//中心点
+	float r;//半径
+	void Draw();
+};

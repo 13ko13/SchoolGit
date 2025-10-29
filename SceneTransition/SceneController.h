@@ -9,15 +9,27 @@ class Scene;
 class SceneController
 {
 private:
-	std::list<std::shared_ptr<Scene>> scenes_;//現在実行中のシーン
+	//現在スタックに積まれているシーン
+	//最後に積んだものだけがUpdateされる
+	std::list<std::shared_ptr<Scene>> scenes_;
 public:
 	/// <summary>
 	/// シーンの切り替え
 	/// </summary>
 	/// <param name="scene">新しいシーン</param>
+	/// <note>最後に積んだシーンがChangeされる</note>
 	void ChangeScene(std::shared_ptr<Scene> scene);
 
+	/// <summary>
+	/// シーンを新しく積みます
+	/// </summary>
+	/// <param name="scene">積みたいシーン</param>
+	/// <note>ChangeSceneと違って、もともと積まれてるシーンは残り続ける</note>
 	void PushScene(std::shared_ptr<Scene> scene);
+
+	/// <summary>
+	/// 最後に積んだシーンをリストから外す(自動的に解放される)
+	/// </summary>
 	void PopScene();
 
 	/// <summary>

@@ -6,6 +6,7 @@
 #include <cassert>
 #include "Application.h"
 #include <cmath>
+#include "PauseScene.h"
 
 constexpr int player_cut_w = 16;
 constexpr int player_cut_h = 24;
@@ -94,6 +95,13 @@ void GameScene::NormalUpdate(Input& input)
 		draw_ = &GameScene::FadeDraw;
 		return;
 	}
+
+	if (input.IsTriggerd("pause"))
+	{
+		controller_.PushScene(std::make_shared<PauseScene>(controller_));
+		return;
+	}
+
 	Vector2 vel = { 0.0f,0.0f };//プレイヤーの速度ベクトル
 	if (input.IsPressed("up"))
 	{

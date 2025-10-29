@@ -1,0 +1,142 @@
+#include "PauseScene.h"
+#include <DxLib.h>
+#include "Input.h"
+#include "SceneController.h"
+#include "Application.h"
+
+constexpr int frame_margin = 10;//枠が画面端からどれくらい離れてるか
+constexpr int appear_interval = 10;//枠が出現するまでのフレーム数
+constexpr int menu_row_height = 50;//メニューの行の高さ
+constexpr int menu_left_margin = 200;//メニュー枠からの左余白
+constexpr int menu_top_margin = 120;//メニュー枠からの上余白
+
+void PauseScene::AppearUpdate(Input& input)
+{
+	if (frame_ == appear_interval)
+	{
+		update_ = &PauseScene::NormalUpdate;
+		draw_ = &PauseScene::NormalDraw;
+		frame_ = appear_interval;
+		return;
+	}
+	++frame_;
+}
+
+void PauseScene::NormalUpdate(Input& input)
+{
+	if (input.IsTriggerd("pause"))
+	{
+		update_ = &PauseScene::DisappearUpdate;
+		draw_ = &PauseScene::IntervalDraw;
+		return;//念のためreturnしておく
+	}
+	if (input.IsTriggerd("up"))
+	{
+		selectIndex_ = (selectIndex_ + menuList_.size() - 1) % menuList_.size();
+
+	}
+	if (input.IsTriggerd("down"))
+	{
+		selectIndex_ = (selectIndex_ + 1) % menuList_.size();
+	}
+}
+
+void PauseScene::DisappearUpdate(Input& input)
+{
+	if (frame_ == 0)
+	{
+		controller_.PopScene();//この時点で自分は解放される
+		return;
+	}
+	--frame_;
+}
+
+void PauseScene::IntervalDraw()
+{
+	const auto& wsize = Application::GetInstance().GetWindowSize();
+
+	int center_y = wsize.h / 2;//画面の真ん中のY座標
+	float rate = static_cast<float>(frame_) /
+		static_cast<float>(appear_interval);//表示割合
+
+	int frame_height = (wsize.h - frame_margin) - center_y;//最終的なポーズ枠の高さ
+	frame_height *= rate;
+
+	//黒くて色が薄いセロファンを貼る
+	SetDrawBlendMode(DX_BLENDMODE_ALPHA, 128);
+	DrawBox(frame_margin,//左
+		center_y - frame_height,//上
+		wsize.w - frame_margin,//右
+		center_y + frame_height,//下
+		0x000000, true);
+	SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+
+	//外枠
+	DrawBox(frame_margin,//左
+		center_y - frame_height,//上
+		wsize.w - frame_margin,//右
+		center_y + frame_height,//下
+		0xaaaaff, false, 3);
+}
+
+void PauseScene::NormalDraw()
+{
+	const auto& wsize = Application::GetInstance().GetWindowSize();
+	//黒くて色が薄いセロファンを貼る
+	SetDrawBlendMode(DX_BLENDMODE_ALPHA, 128);
+	DrawBox(frame_margin, frame_margin,//左上
+		wsize.w - frame_margin, wsize.h - frame_margin, 0x000000, true);
+	SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+
+	//外枠
+	DrawBox(frame_margin, frame_margin,//左上
+		wsize.w - frame_margin, wsize.h - frame_margin, 0xaaaaff, false, 3);
+	//ポーズシーンの文字列表示
+	DrawString(280, frame_margin + 20, L"Pause Scene", 0xffffff);
+	DrawMenu();
+}
+
+void PauseScene::DrawMenu()
+{
+	int menuStartX = frame_margin + menu_left_margin;
+	int indicatorX = menuStartX - 30;
+	int menuY = frame_margin + menu_top_margin;
+	for (int idx = 0; idx < menuList_.size(); ++idx)
+	{
+		int offsetX = 0;
+		uint32_t col = 0xffffff;
+		if (idx == selectIndex_)
+		{
+			DrawString(indicatorX, menuY, L"⇒", 0xffaaaa);
+			offsetX = 10;
+			col = GetColor(128, 255, 192);
+		}
+		DrawFormatString(menuStartX + offsetX, menuY,
+			col,
+			L"%s", menuList_[idx].c_str());
+
+		menuY += menu_row_height;
+	}
+}
+
+PauseScene::PauseScene(SceneController& controller) : Scene(controller),
+update_(&PauseScene::AppearUpdate),
+draw_(&PauseScene::IntervalDraw)
+{
+	menuList_ = {
+		L"ゲームに戻る",
+		L"キーコンフィグ",
+		L"タイトルに戻る",
+		L"ゲームを終了する"
+	};
+}
+
+void PauseScene::Update(Input& input)
+{
+	(this->*update_)(input);
+}
+
+void PauseScene::Draw()
+{
+	(this->*draw_)();
+}

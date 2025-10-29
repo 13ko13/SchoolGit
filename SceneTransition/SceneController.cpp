@@ -3,11 +3,14 @@
 
 void SceneController::ChangeScene(std::shared_ptr<Scene> scene)
 {
-	//scene代入された際に、元々別のシーンがscene_に入っていたら
-	//もともとのscene_の参照先を参照するオブジェクトがいなくなるため
-	// もとのscene_は自動的に削除されます
+	//もし、リストがカラの場合、普通に代入でChangeSceneしようとすると
+	//当然emptyの箱に対してChangeしようとするので、クラッシュします
+	//このため、最初にemptyかどうかをチェックします
 	if (scenes_.empty())
 	{
+		//最初は要素がないため
+		//空っぽの場合には指定の要素をpushします
+		//少なくとも1つは積まれている状態にする
 		scenes_.push_back(scene);
 	}
 	else
@@ -18,18 +21,27 @@ void SceneController::ChangeScene(std::shared_ptr<Scene> scene)
 
 void SceneController::PushScene(std::shared_ptr<Scene> scene)
 {
+	//新しいシーンを末尾に積みます(下から積む？)
+	scenes_.push_back(scene);
 }
 
 void SceneController::PopScene()
 {
+	//末尾のシーンを削除します
+	scenes_.pop_back();
 }
 
 void SceneController::Update(Input& input)
 {
+	//末尾の要素に対してUpdateする
 	scenes_.back()->Update(input);
 }
 
 void SceneController::Draw()
 {
-	scenes_.back()->Draw();
+	//末尾の要素に対してのみUpdateする
+	for (auto& scene : scenes_)
+	{
+		scene->Draw();
+	}
 }

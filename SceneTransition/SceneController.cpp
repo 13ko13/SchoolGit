@@ -39,7 +39,8 @@ void SceneController::Update(Input& input)
 
 void SceneController::Draw()
 {
-	//––”ö‚Ì—v‘f‚É‘Î‚µ‚Ä‚Ì‚ÝUpdate‚·‚é
+	//Update‚¾‚¯Ž~‚ß‚Ä‚·‚×‚ÄDraw
+	//ƒ|[ƒY‚µ‚½‚Æ‚«‚ÉƒvƒŒƒC”wŒi‚ÍŽc‚é
 	for (auto& scene : scenes_)
 	{
 		scene->Draw();

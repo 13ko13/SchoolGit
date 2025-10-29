@@ -5,7 +5,19 @@
 #include "SceneController.h"
 #include "Application.h"
 
+//フェードにかかるフレーム数
 constexpr int fade_interval = 60;
+
+TitleScene::TitleScene(SceneController& controller) :
+	Scene(controller)
+{
+	titleH_ = LoadGraph(L"img/title.png");
+	titleLogoH_ = LoadGraph(L"img/game_title.png");
+	//updateとdrawの関数ポインタにFadeInUpdateとFadeDrawを参照させる
+	update_ = &TitleScene::FadeInUpdate;
+	draw_ = &TitleScene::FadeDraw;
+	frame_ = fade_interval;
+}
 
 void TitleScene::FadeInUpdate(Input&)
 {
@@ -54,16 +66,6 @@ void TitleScene::FadeDraw()
 	SetDrawBlendMode(DX_BLENDMODE_ALPHA, 255 * rate);//αブレンド
 	DrawBox(0, 0, wsize.w, wsize.h, 0x000000, true);//画面全体に黒フィルムをかける
 	SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);//ブレンドしない
-}
-
-TitleScene::TitleScene(SceneController& controller) :
-	Scene(controller)
-{
-	titleH_ = LoadGraph(L"img/title.png");
-	titleLogoH_ = LoadGraph(L"img/game_title.png");
-	update_ = &TitleScene::FadeInUpdate;
-	draw_ = &TitleScene::FadeDraw;
-	frame_ = fade_interval;
 }
 
 void TitleScene::Update(Input& input)

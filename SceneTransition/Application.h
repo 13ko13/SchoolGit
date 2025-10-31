@@ -14,6 +14,8 @@ private:
 	Application();//newも変数宣言もできなくなる
 	Application(const Application& app) = delete;//コピーコンストラクタも無効にする
 	void operator=(const Application& app) = delete;//代入も一応無効にする
+
+	bool requestedExit_ = false;//ゲームの終了がリクエストされた
 public:
 	~Application();
 	//ただ一つのApplicationオブジェクトにアクセスする関数をstaticで用意
@@ -47,5 +49,8 @@ public:
 	/// ウィンドウサイズを返す
 	/// </summary>
 	const Size& GetWindowSize() const;
+
+	//アプリケーションの終了する命令を飛ばす
+	void RequestExit();
 };
 

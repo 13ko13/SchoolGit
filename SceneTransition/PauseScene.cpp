@@ -3,6 +3,8 @@
 #include "Input.h"
 #include "SceneController.h"
 #include "Application.h"
+#include "KeyConfigScene.h"
+#include "TitleScene.h"
 
 constexpr int frame_margin = 10;//枠が画面端からどれくらい離れてるか
 constexpr int appear_interval = 10;//枠が出現するまでのフレーム数
@@ -39,6 +41,14 @@ void PauseScene::NormalUpdate(Input& input)
 	{
 		selectIndex_ = (selectIndex_ + 1) % menuList_.size();
 	}
+	if (input.IsTriggerd("ok"))
+	{
+		//現在選択中のメニューアイテム名を取得する
+		auto& menuName = menuList_[selectIndex_];
+		//そのメニューアイテムの名前に対応付けられたラムダ式を実行する
+		execTable_[menuName]();
+		return;
+	}
 }
 
 void PauseScene::DisappearUpdate(Input& input)
@@ -49,6 +59,14 @@ void PauseScene::DisappearUpdate(Input& input)
 		return;
 	}
 	--frame_;
+}
+
+void PauseScene::YesNoDialogUpdate(Input& input)
+{
+	if (input.IsTriggerd("left") || input.IsTriggerd("right"))
+	{
+		yesnoIndex = (yesnoIndex + 1) % 2;
+	}
 }
 
 void PauseScene::IntervalDraw()
@@ -119,6 +137,31 @@ void PauseScene::DrawMenu()
 	}
 }
 
+void PauseScene::YesNoDialogDraw()
+{
+	NormalDraw();
+	const int dialog_left = 320 - 150;
+	DrawBox(dialog_left, 240 - 100,
+		320 + 150, 240 + 100,
+		0xaa8888, true);
+	DrawBox(dialog_left, 240 - 100,
+		320 + 150, 240 + 100,
+		0xffffff, false,3);
+
+	int x = dialog_left + 30;
+	std::array<std::wstring, 2> answers = { L"はい",L"いいえ" };
+	for (int idx = 0; idx < 2; ++idx)
+	{
+		uint32_t col = 0xffffff;
+		DrawFormatString(x, 240, col, L"%s", answers[idx].c_str());
+		if (yesnoIndex == idx)
+		{
+			DrawString(x - 20, 240, L"⇒", 0xaaffaa);
+		}
+		x += 100;
+	}
+}
+
 PauseScene::PauseScene(SceneController& controller) : Scene(controller),
 update_(&PauseScene::AppearUpdate),
 draw_(&PauseScene::IntervalDraw)
@@ -129,6 +172,26 @@ draw_(&PauseScene::IntervalDraw)
 		L"タイトルに戻る",
 		L"ゲームを終了する"
 	};
+	execTable_[L"ゲームに戻る"] = [this]() {
+		update_ = &PauseScene::DisappearUpdate;
+		draw_ = &PauseScene::IntervalDraw;
+		frame_ = appear_interval;
+		};
+
+	execTable_[L"キーコンフィグ"] = [this]() {
+		controller_.PushScene(std::make_shared<KeyConfigScene>(controller_));
+		};
+
+	execTable_[L"タイトルに戻る"] = [this]() {
+		update_ = &PauseScene::YesNoDialogUpdate;
+		draw_ = &PauseScene::YesNoDialogDraw;
+		//controller_.ResetScene(std::make_shared<TitleScene>(controller_));
+		};
+
+	execTable_[L"ゲームを終了する"] = [this]() {
+		//Application::GetInstance().RequestExit();
+		};
+
 }
 
 void PauseScene::Update(Input& input)

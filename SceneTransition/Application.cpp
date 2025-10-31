@@ -45,7 +45,7 @@ void Application::Run()
 	//何かしらシーンがないと、UpdateもDrawもできないため
 	controller.ChangeScene(std::make_shared<TitleScene>(controller));
 
-	while (ProcessMessage() != -1)
+	while (ProcessMessage() != -1 && !requestedExit_)
 	{
 		ClearDrawScreen();
 		input.Update();//入力情報の更新
@@ -67,4 +67,9 @@ void Application::Terminate()
 const Size& Application::GetWindowSize() const
 {
 	return windowSize_;
+}
+
+void Application::RequestExit()
+{
+	requestedExit_ = true;
 }

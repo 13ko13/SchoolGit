@@ -144,6 +144,7 @@
     <ClCompile Include="GameScene.cpp" />
     <ClCompile Include="Geometry.cpp" />
     <ClCompile Include="Input.cpp" />
+    <ClCompile Include="KeyConfigScene.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="PauseScene.cpp" />
     <ClCompile Include="Scene.cpp" />
@@ -158,6 +159,7 @@
     <ClInclude Include="GameScene.h" />
     <ClInclude Include="Geometry.h" />
     <ClInclude Include="Input.h" />
+    <ClInclude Include="KeyConfigScene.h" />
     <ClInclude Include="PauseScene.h" />
     <ClInclude Include="Scene.h" />
     <ClInclude Include="SceneController.h" />

@@ -47,6 +47,8 @@ void Application::Run()
 
 	while (ProcessMessage() != -1 && !requestedExit_)
 	{
+		auto startTime = GetNowHiPerformanceCount();
+
 		ClearDrawScreen();
 		input.Update();//“ü—Íî•ñ‚ÌXV
 
@@ -56,6 +58,11 @@ void Application::Run()
 		controller.Draw();
 
 		ScreenFlip();
+
+		while (GetNowHiPerformanceCount() - startTime < 16667)
+		{
+
+		}
 	}
 }
 

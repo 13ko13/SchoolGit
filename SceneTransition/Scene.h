@@ -7,6 +7,9 @@ class Input;			//入力のプロトタイプ宣言
 class Scene
 {
 protected:
+	//シーンコントローラの参照を持っている
+	//ただ単に、それぞれの派生クラスでいちいち新しく
+	//宣言するのが面倒だから
 	SceneController& controller_;
 public:
 	Scene(SceneController& controller);

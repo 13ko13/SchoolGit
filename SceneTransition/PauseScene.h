@@ -12,11 +12,13 @@ class PauseScene : public Scene
 {
 private:
 	//メニュー名と実行内容の対応テーブル
-	std::map<std::wstring, std::function<void()>> execTable_;
+	std::map<std::wstring, std::function<void(Input&)>> execTable_;
 	int frame_ = 0;
 	int selectIndex_ = 0;//現在選択中のインデックス
 
-	int yesnoIndex = 0;//Noがデフォルトですが、YES = 0,NO = 1とします
+	int yesnoIndex_ = 1;//Noがデフォルトですが、YES = 0,NO = 1とします
+	//Yes/Noの後で実行してほしい内容
+	std::function<void()> yesNoRequestFunction_ = []() {};
 
 	using UpdateFunc_t = void (PauseScene::*)(Input&);
 	UpdateFunc_t update_;

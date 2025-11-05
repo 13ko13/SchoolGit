@@ -46,7 +46,7 @@ void PauseScene::NormalUpdate(Input& input)
 		//現在選択中のメニューアイテム名を取得する
 		auto& menuName = menuList_[selectIndex_];
 		//そのメニューアイテムの名前に対応付けられたラムダ式を実行する
-		execTable_[menuName]();
+		execTable_[menuName](input);
 		return;
 	}
 }
@@ -65,7 +65,22 @@ void PauseScene::YesNoDialogUpdate(Input& input)
 {
 	if (input.IsTriggerd("left") || input.IsTriggerd("right"))
 	{
-		yesnoIndex = (yesnoIndex + 1) % 2;
+		yesnoIndex_ = (yesnoIndex_ + 1) % 2;
+	}
+	if (input.IsTriggerd("ok"))
+	{
+		//YESが選ばれた
+		if (yesnoIndex_ == 0)
+		{
+			yesNoRequestFunction_();
+		}
+		else
+		{//Noが選ばれた
+			yesNoRequestFunction_ = []() {};
+			update_ = &PauseScene::NormalUpdate;
+			draw_ = &PauseScene::NormalDraw;
+		}
+		return;
 	}
 }
 
@@ -139,25 +154,49 @@ void PauseScene::DrawMenu()
 
 void PauseScene::YesNoDialogDraw()
 {
+	//NormalDrawを書いてるのは、通常のメニューの上に
+	//YesNoDialogを置きたいので、メニューの表示をするため
 	NormalDraw();
-	const int dialog_left = 320 - 150;
-	DrawBox(dialog_left, 240 - 100,
-		320 + 150, 240 + 100,
-		0xaa8888, true);
-	DrawBox(dialog_left, 240 - 100,
-		320 + 150, 240 + 100,
-		0xffffff, false,3);
 
-	int x = dialog_left + 30;
+	constexpr int yes_no_dialog_height = 100;
+	constexpr int yes_no_dialog_width = 300;
+	const int centerY = Application::GetInstance().GetWindowSize().h / 2;
+	const int centerX = Application::GetInstance().GetWindowSize().w / 2;
+
+	//枠表示
+	const int dialog_left = centerX - yes_no_dialog_width / 2;
+	DrawBox(
+		dialog_left,
+		centerY - yes_no_dialog_height / 2,
+		centerX + yes_no_dialog_width / 2,
+		centerY + yes_no_dialog_height / 2,
+		0xaa8888, true);
+
+	DrawBox(
+		dialog_left,
+		centerY - yes_no_dialog_height / 2,
+		centerX + yes_no_dialog_width / 2,
+		centerY + yes_no_dialog_height / 2,
+		0xffffff, false, 3);
+
+	int y = centerY - 10;//画面中心から文字サイズの半分引く
+	int x = dialog_left + 90;//はい、いいえが真ん中に来るよう調整
 	std::array<std::wstring, 2> answers = { L"はい",L"いいえ" };
+
+	//ダイアログタイトルを表示
+	DrawFormatString(centerX - 50, centerY - yes_no_dialog_height / 2 + 10,
+		0xffffff, L"%s", menuList_[selectIndex_].c_str());
+
+	//はい、いいえを表示
 	for (int idx = 0; idx < 2; ++idx)
 	{
 		uint32_t col = 0xffffff;
-		DrawFormatString(x, 240, col, L"%s", answers[idx].c_str());
-		if (yesnoIndex == idx)
+		if (yesnoIndex_ == idx)
 		{
-			DrawString(x - 20, 240, L"⇒", 0xaaffaa);
+			DrawString(x - 20, y, L"⇒", 0xaaffaa);
+			col = GetColor(255, 64, 64);
 		}
+		DrawFormatString(x, y, col, L"%s", answers[idx].c_str());
 		x += 100;
 	}
 }
@@ -172,24 +211,31 @@ draw_(&PauseScene::IntervalDraw)
 		L"タイトルに戻る",
 		L"ゲームを終了する"
 	};
-	execTable_[L"ゲームに戻る"] = [this]() {
+	execTable_[L"ゲームに戻る"] = [this](Input&) {
 		update_ = &PauseScene::DisappearUpdate;
 		draw_ = &PauseScene::IntervalDraw;
 		frame_ = appear_interval;
 		};
 
-	execTable_[L"キーコンフィグ"] = [this]() {
-		controller_.PushScene(std::make_shared<KeyConfigScene>(controller_));
+	execTable_[L"キーコンフィグ"] = [this](Input& input) {
+		controller_.PushScene(std::make_shared<KeyConfigScene>(controller_,input));
 		};
 
-	execTable_[L"タイトルに戻る"] = [this]() {
+	execTable_[L"タイトルに戻る"] = [this](Input&) {
 		update_ = &PauseScene::YesNoDialogUpdate;
 		draw_ = &PauseScene::YesNoDialogDraw;
-		//controller_.ResetScene(std::make_shared<TitleScene>(controller_));
+		yesNoRequestFunction_ = [this]() {
+			controller_.ResetScene(std::make_shared<TitleScene>(controller_));
+			};
 		};
 
-	execTable_[L"ゲームを終了する"] = [this]() {
-		//Application::GetInstance().RequestExit();
+	execTable_[L"ゲームを終了する"] = [this](Input&) {
+		update_ = &PauseScene::YesNoDialogUpdate;
+		draw_ = &PauseScene::YesNoDialogDraw;
+		yesNoRequestFunction_ = []()
+			{
+				Application::GetInstance().RequestExit();
+			};
 		};
 
 }

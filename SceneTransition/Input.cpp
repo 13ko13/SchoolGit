@@ -9,18 +9,32 @@ Input::Input() :
 	//イベント名を添え字にして、右辺値に実際の入力種別と入力コードの配列を置く
 	inputTable_["ok"] = { { PeripheralType::keyboard, KEY_INPUT_RETURN },
 							{  PeripheralType::pad1,PAD_INPUT_L } };//SELECTキー
+
 	inputTable_["pause"] = { { PeripheralType::keyboard, KEY_INPUT_P },
 							{  PeripheralType::pad1,PAD_INPUT_R } };
+
 	inputTable_["shot"] = { { PeripheralType::keyboard, KEY_INPUT_Z },
 							{PeripheralType::pad1, PAD_INPUT_C } };//PADのXボタン
+
+	inputTable_["slow"] = { { PeripheralType::keyboard, KEY_INPUT_LSHIFT },
+							{PeripheralType::pad1, PAD_INPUT_A } };//PADのAボタン
+
+	inputTable_["bomb"] = { { PeripheralType::keyboard, KEY_INPUT_X },
+							{PeripheralType::pad1, PAD_INPUT_X } };//PADのYボタン
+
 	inputTable_["up"] = { { PeripheralType::keyboard, KEY_INPUT_UP },
 							{PeripheralType::pad1,PAD_INPUT_UP } };
+
 	inputTable_["down"] = { { PeripheralType::keyboard, KEY_INPUT_DOWN },
 							{PeripheralType::pad1,PAD_INPUT_DOWN } };
+
 	inputTable_["left"] = { { PeripheralType::keyboard, KEY_INPUT_LEFT },
 		{PeripheralType::pad1,PAD_INPUT_LEFT } };
+
 	inputTable_["right"] = { { PeripheralType::keyboard, KEY_INPUT_RIGHT },
 							{PeripheralType::pad1,PAD_INPUT_RIGHT } };
+
+	editableEventNames_ = { "ok","pause","shot","slow","bomb" };
 
 	//あらかじめ入力データのための枠を開けておく
 	//ここで枠を開けておかないと、チェックの際にAt関数でクラッシュする可能性がある

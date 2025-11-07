@@ -11,6 +11,9 @@ constexpr int appear_interval = 10;//枠が出現するまでのフレーム数
 constexpr int menu_row_height = 50;//メニューの行の高さ
 constexpr int menu_left_margin = 200;//メニュー枠からの左余白
 constexpr int menu_top_margin = 120;//メニュー枠からの上余白
+constexpr int yes_no_dialog_yes = 0;//YesNoDialogでYes
+constexpr int yes_no_dialog_no = 1;//YesNoDialogでNo
+
 
 void PauseScene::AppearUpdate(Input& input)
 {
@@ -70,13 +73,13 @@ void PauseScene::YesNoDialogUpdate(Input& input)
 	if (input.IsTriggerd("ok"))
 	{
 		//YESが選ばれた
-		if (yesnoIndex_ == 0)
+		if (yesnoIndex_ == yes_no_dialog_yes)
 		{
 			yesNoRequestFunction_();
 		}
 		else
 		{//Noが選ばれた
-			yesNoRequestFunction_ = []() {};
+			yesNoRequestFunction_ = []() {};//念のためクリア
 			update_ = &PauseScene::NormalUpdate;
 			draw_ = &PauseScene::NormalDraw;
 		}
@@ -211,6 +214,8 @@ draw_(&PauseScene::IntervalDraw)
 		L"タイトルに戻る",
 		L"ゲームを終了する"
 	};
+
+	//メニューで選ばれる文字列と実行される内容のペアを定義
 	execTable_[L"ゲームに戻る"] = [this](Input&) {
 		update_ = &PauseScene::DisappearUpdate;
 		draw_ = &PauseScene::IntervalDraw;
@@ -234,7 +239,7 @@ draw_(&PauseScene::IntervalDraw)
 		draw_ = &PauseScene::YesNoDialogDraw;
 		yesNoRequestFunction_ = []()
 			{
-				Application::GetInstance().RequestExit();
+				Application::GetInstance().RequestExit();//ゲームを終了する
 			};
 		};
 

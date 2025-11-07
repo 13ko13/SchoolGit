@@ -41,10 +41,14 @@ void Application::Run()
 	SetDrawScreen(DX_SCREEN_BACK);
 	Input input;//入力のためのオブジェクト
 	SceneController controller;//シーン遷移のためのコントロールオブジェクト
+	
+	
 	//最初のシーンをセットする
 	//何かしらシーンがないと、UpdateもDrawもできないため
 	controller.ChangeScene(std::make_shared<TitleScene>(controller));
 
+	//ゲームループ
+	//このループを抜ける=ゲームが終了する
 	while (ProcessMessage() != -1 && !requestedExit_)
 	{
 		auto startTime = GetNowHiPerformanceCount();

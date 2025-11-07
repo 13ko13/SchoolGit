@@ -22,7 +22,9 @@ struct InputState
 	int id;//入力情報が入る(キーボードの場合はインデックス、パッドの場合はビット）
 };
 
-class KeyConfigScene;
+//プロトタイプ宣言
+//KeyConfiSceneはクラスですよ!正体は後でわかりますよ！
+class KeyConfigScene;//KeyConfigSceneはずっ友だよ
 
 /// <summary>
 /// 入力を抽象化するためのクラス
@@ -36,6 +38,8 @@ private:
 	std::map<std::string,std::vector<InputState>> inputTable_;	//イベント名と実際の入力の対応表
 	std::map<std::string, bool>inputData_;//実際に入力されたかどうかのデータ
 	std::map<std::string, bool>lastInputData_;//前のフレームに入力されたかどうかのデータ
+	//キーコンフィグできるイベント名配列
+	std::vector<std::string> editableEventNames_;
 public:
 	Input();
 

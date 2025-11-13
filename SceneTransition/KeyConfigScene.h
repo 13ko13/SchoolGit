@@ -3,6 +3,9 @@
 #include "Geometry.h"
 #include <map>
 #include <string>
+#include <array>
+#include <vector>//キー以外のメニュー用
+#include <functional>//メニュー実行用
 
 /// <summary>
 /// キーコンフィグシーン
@@ -15,10 +18,23 @@ private:
 	std::map<uint32_t, std::wstring> padNameTable_;//パッドのボタン名テーブル
 	std::map<int, std::wstring> keyNameTable_;//キーボードのキー名テーブル
 
+	int currentPadState_ = 0;
+	std::array < char, 256 > currentKeyState_ = {};//直前でキーボードの入力が行われていたか
+	int lastPadState_ = 0;
+	std::array < char, 256 > lastKeyState_ = {};//直前でパッドの入力が行われていたか
+
+	std::vector<std::wstring> menuList_;//メニューの文字列リスト
+	std::map < std::wstring, std::function<void(Input&)>> menuFuncs_;//メニュー文字列と実行内容の対応
+
+	bool isFirstEditFrame_ = false;
+
+
 	//drawなどで使用するInputクラスオブジェクトへの参照
 	Input& input_;
 	//ウィンドを開くときのフレームカウント
 	int frame_;
+
+	
 
 	using UpdateFunc_t = void(KeyConfigScene::*)(Input&);
 	UpdateFunc_t update_;

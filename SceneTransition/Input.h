@@ -36,6 +36,9 @@ class Input
 
 private:
 	std::map<std::string,std::vector<InputState>> inputTable_;	//イベント名と実際の入力の対応表
+	//仮の入力テーブル
+	//キーコンフィグが終わったら破棄される
+	std::map<std::string, std::vector<InputState>> tempInputTable_;
 	std::map<std::string, bool>inputData_;//実際に入力されたかどうかのデータ
 	std::map<std::string, bool>lastInputData_;//前のフレームに入力されたかどうかのデータ
 	//キーコンフィグできるイベント名配列

@@ -4,6 +4,7 @@
 #include "SceneController.h"
 #include "Application.h"
 #include "StringFunctions.h"
+#include <array>
 
 constexpr int appear_interval = 10;//枠が出現するまでのフレーム数
 constexpr int menu_row_height = 50;//メニューの行の高さ
@@ -17,6 +18,7 @@ KeyConfigScene::KeyConfigScene(SceneController& controller, Input& input) :
 	draw_(&KeyConfigScene::IntervalDraw),
 	frame_(0)
 {
+	input.tempInputTable_ = input.inputTable_;
 	keyNameTable_[KEY_INPUT_BACK] = L"BackSpaceキー";
 	keyNameTable_[KEY_INPUT_TAB] = L"Tabキー";
 	keyNameTable_[KEY_INPUT_RETURN] = L"Enterキー";
@@ -64,6 +66,21 @@ KeyConfigScene::KeyConfigScene(SceneController& controller, Input& input) :
 	padNameTable_[PAD_INPUT_START] = L"左レバー押込";
 	padNameTable_[PAD_INPUT_M] = L"右レバー押込";
 
+	menuList_ = { L"Save&Exit KeyConfig",L"Cancel&Exit KeyConfig",L"Reset Input Data" };
+	menuFuncs_[L"Save&Exit KeyConfig"] = [this](Input&)
+		{
+			input_.inputTable_ = input_.tempInputTable_;
+			update_ = &KeyConfigScene::DisappearUpdate;
+			draw_ = &KeyConfigScene::IntervalDraw;
+		};
+	menuFuncs_[L"Cancel&Exit KeyConfig"] = [this](Input&)
+		{
+			update_ = &KeyConfigScene::DisappearUpdate;
+			draw_ = &KeyConfigScene::IntervalDraw;
+		};
+	menuFuncs_[L"Reset Input Data"] = [this](Input&)
+		{
+		};
 }
 
 void KeyConfigScene::AppearUpdate(Input&)
@@ -77,21 +94,41 @@ void KeyConfigScene::AppearUpdate(Input&)
 
 void KeyConfigScene::NormalUpdate(Input& input)
 {
-	const int menuRowSize = input.editableEventNames_.size() + 1;
+	const int menuRowSize = input.editableEventNames_.size() + menuList_.size();
 
 	if (input.IsTriggerd("ok"))
 	{
-		if (selectIndex_ == menuRowSize - 1)
+		//これは「最後の行」なので、Exitである
+		//なので、ここでokが押されたらもう閉じる状態に移行する
+		if (selectIndex_ >= input_.editableEventNames_.size())
 		{
-			update_ = &KeyConfigScene::DisappearUpdate;
-			draw_ = &KeyConfigScene::IntervalDraw;
-			frame_ = appear_interval;
+			auto menuIndex = selectIndex_ - input_.editableEventNames_.size();
+			auto menuName = menuList_[menuIndex];
+			menuFuncs_[menuName](input);
 			return;
+			//if (selectIndex_ == input_.editableEventNames_.size())//Save&Exit
+			//{
+			//	update_ = &KeyConfigScene::DisappearUpdate;
+			//	draw_ = &KeyConfigScene::IntervalDraw;
+			//	input_.inputTable_ = input_.tempInputTable_;
+			//	frame_ = appear_interval;
+			//	return;
+			//}
+			//if (selectIndex_ == input_.editableEventNames_.size() + 1)//Cancel&Exit
+			//{
+			//	update_ = &KeyConfigScene::DisappearUpdate;
+			//	draw_ = &KeyConfigScene::IntervalDraw;
+			//	frame_ = appear_interval;
+			//	return;
+			//}
 		}
-		if (selectIndex_ < input_.editableEventNames_.size())
+		else
 		{
+			//もし、イベント名のところでokが押されていたら
+		//エディットモードに切り替える
 			update_ = &KeyConfigScene::EditingUpdate;
 			draw_ = &KeyConfigScene::EditingDraw;
+			isFirstEditFrame_ = true;
 			return;
 		}
 	}
@@ -114,8 +151,67 @@ void KeyConfigScene::DisappearUpdate(Input&)
 	}
 }
 
-void KeyConfigScene::EditingUpdate(Input&)
+void KeyConfigScene::EditingUpdate(Input& input)
 {
+	if (input.IsTriggerd("ok"))
+	{
+		update_ = &KeyConfigScene::NormalUpdate;
+		draw_ = &KeyConfigScene::NormalDraw;
+		isFirstEditFrame_ = false;
+		return;
+	}
+	lastKeyState_ = currentKeyState_;
+	lastPadState_ = currentPadState_;
+	//生入力を取得します
+	GetHitKeyStateAll(currentKeyState_.data());
+	currentPadState_ = GetJoypadInputState(DX_INPUT_PAD1);
+	if (isFirstEditFrame_)
+	{
+		isFirstEditFrame_ = false;
+		return;
+	}
+	auto eventName = input_.editableEventNames_[selectIndex_];
+	//何かが入力されていたらそれを使用する
+	//キーボードの入力をチェックする
+	for (int keycode = 0; keycode < currentKeyState_.size(); ++keycode)
+	{
+		if (!keyNameTable_.contains(keycode)) continue;
+		if (currentKeyState_[keycode] && !lastKeyState_[keycode])
+		{
+			//最初にtrueのものを見つけたらそれをキーコードとする
+			for (auto& inputRow : input.tempInputTable_[eventName])
+			{
+				if (inputRow.type == PeripheralType::keyboard)
+				{
+					inputRow.id = keycode;
+				}
+			}
+			break;
+		}
+	}
+	//パッド入力をチェック
+	uint32_t bit = 0b1;
+	for (int i = 0; i < 32; ++i)
+	{
+		if (!padNameTable_.contains(bit))
+		{
+			bit <<= 1;//continueの際でもbitは進めないと止まってしまう
+			continue;
+		}
+
+		if ((currentPadState_ & bit) && !(lastPadState_&bit))
+		{
+			for (auto& inputRow : input.tempInputTable_[eventName])
+			{
+				if (inputRow.type == PeripheralType::pad1)
+				{
+					inputRow.id = bit;
+				}
+			}
+			break;
+		}
+		bit <<= 1;
+	}
 }
 
 void KeyConfigScene::IntervalDraw()
@@ -198,7 +294,7 @@ void KeyConfigScene::NormalDraw()
 		//右にちょっとずらして、実際の入力コードを表示
 		x += 50;
 		
-		for (const auto& inputState : input_.inputTable_[name])
+		for (const auto& inputState : input_.tempInputTable_[name])
 		{
 			DrawFormatString(x, y, 0xffffff, L"%s : %s", 
 				periNameTable[inputState.type].c_str(),
@@ -209,14 +305,25 @@ void KeyConfigScene::NormalDraw()
 		}
 		y += 30;
 	}
-	int x = centerX - frameW + menu_left_margin;
-	
-	if (!isSelectedEvent)
+	//イベントの行と少し離しておく
+	y += 50;
+
+	for (const auto name : menuList_)
 	{
-		x += 10;
-		DrawString(centerX - frameW + menu_left_margin - 20, y, L"⇒", 0xff0000);
+		auto x = centerX - frameW + menu_left_margin + 150;
+		if (selectIndex_ >= input_.editableEventNames_.size())
+		{
+			if (menuList_[selectIndex_ - input_.editableEventNames_.size()] == name)
+			{
+				DrawString(x - 20, y, L"⇒", 0xff0000);
+				x += 10;
+			}
+		}
+		DrawFormatString(x, y, 0xffffff, L"%s", name.c_str());
+
+		x = centerX - frameW + menu_left_margin + 150;
+		y += 30;
 	}
-	DrawString(x, y, L"Exit Key Config", 0xffffff);
 }
 
 void KeyConfigScene::EditingDraw()
@@ -247,21 +354,26 @@ void KeyConfigScene::EditingDraw()
 	//イベント名と、実際に割り当てられているボタンを表示します
 	for (const auto& name : input_.editableEventNames_)
 	{
+		//編集中状態で、もし現在編集中の行を選択していれば
+		//選択中の行の色を変更し、もうちょっとだけ右にずらす
 		int x = centerX - frameW + menu_left_margin;
+		uint32_t col = 0xffffff;//ちょっと右にずらす
 		if (input_.editableEventNames_[selectIndex_] == name)
 		{
+			x += 10;
 			DrawString(x - 20, y, L"⇒", 0xff0000);
+			col = 0xaa00ff;//行の色を変更
 			x += 10;
 		}
 		//イベント名を表示
 		auto wname = StringFunctions::WStringFromString(name);
-		DrawFormatString(x, y, 0xffffff, L"%s", wname.c_str());
+		DrawFormatString(x, y, col, L"%s", wname.c_str());
 		//右にちょっとずらして、実際の入力コードを表示
 		x += 50;
 
-		for (const auto& inputState : input_.inputTable_[name])
+		for (const auto& inputState : input_.tempInputTable_[name])
 		{
-			DrawFormatString(x, y, 0xffffff, L"%s : %s",
+			DrawFormatString(x, y, col, L"%s : %s",
 				periNameTable[inputState.type].c_str(),
 				inputState.type == PeripheralType::keyboard ? //三項演算子
 				keyNameTable_[inputState.id].c_str() :

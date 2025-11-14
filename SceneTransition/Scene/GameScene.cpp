@@ -1,10 +1,10 @@
 #include "GameScene.h"
 #include <DxLib.h>
-#include "Input.h"
+#include "../Input.h"
 #include "GameoverScene.h"
 #include "SceneController.h"
 #include <cassert>
-#include "Application.h"
+#include "../Application.h"
 #include <cmath>
 #include "PauseScene.h"
 

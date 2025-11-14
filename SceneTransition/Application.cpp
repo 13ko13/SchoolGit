@@ -2,8 +2,8 @@
 #include <DxLib.h>
 #include <cassert>
 #include "Input.h"
-#include "SceneController.h"
-#include "TitleScene.h"
+#include "Scene/SceneController.h"
+#include "Scene/TitleScene.h"
 
 constexpr int default_window_width = 640;//デフォルトウィンドウ幅
 constexpr int default_window_height = 480;//デフォルトウィンドウ高

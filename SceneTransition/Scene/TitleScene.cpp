@@ -1,9 +1,9 @@
 #include "TitleScene.h"
 #include <DxLib.h>
-#include"Input.h"
+#include"../Input.h"
 #include "GameScene.h"
 #include "SceneController.h"
-#include "Application.h"
+#include "../Application.h"
 
 //フェードにかかるフレーム数
 constexpr int fade_interval = 60;

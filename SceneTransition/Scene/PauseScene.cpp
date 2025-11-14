@@ -1,8 +1,8 @@
 #include "PauseScene.h"
 #include <DxLib.h>
-#include "Input.h"
+#include "../Input.h"
 #include "SceneController.h"
-#include "Application.h"
+#include "../Application.h"
 #include "KeyConfigScene.h"
 #include "TitleScene.h"
 

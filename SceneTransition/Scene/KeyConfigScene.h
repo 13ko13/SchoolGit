@@ -1,6 +1,6 @@
 #pragma once
-#include "Scene.h"
-#include "Geometry.h"
+#include "../Scene.h"
+#include "../Geometry.h"
 #include <map>
 #include <string>
 #include <array>
@@ -24,7 +24,7 @@ private:
 	std::array < char, 256 > lastKeyState_ = {};//直前でパッドの入力が行われていたか
 
 	std::vector<std::wstring> menuList_;//メニューの文字列リスト
-	std::map < std::wstring, std::function<void(Input&)>> menuFuncs_;//メニュー文字列と実行内容の対応
+	std::map < std::wstring, std::function<void(void)>> menuFuncs_;//メニュー文字列と実行内容の対応
 
 	bool isFirstEditFrame_ = false;
 
@@ -53,7 +53,16 @@ private:
 	//Draw系状態関数
 	void NormalDraw();
 	void EditingDraw();
+	/// <summary>
+	/// フェード中の描画
+	/// </summary>
 	void IntervalDraw();
+
+	/// <summary>
+	/// イベント名を描画する
+	/// </summary>
+	/// <return></return>
+	int DrawInputTableList(uint32_t selectColor = 0xffffff);
 
 	/// <summary>
 	/// キーコンフィグの枠を表示
@@ -74,6 +83,11 @@ public:
 	/// <param name="ctrl">シーンコントローラ</param>
 	/// <param name="input">Inputオブジェクト</param>
 	KeyConfigScene(SceneController&ctrl,Input& input);
+
+	/// <summary>
+	/// メニューリストを閉じる
+	/// </summary>
+	void CloseSelf();
 
 	void Update(Input& input) override;
 	void Draw() override;

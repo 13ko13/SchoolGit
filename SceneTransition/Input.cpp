@@ -1,10 +1,25 @@
 #include "Input.h"
 #include <DxLib.h>
+#include "StringFunctions.h"
 
-Input::Input() :
-	inputData_{},
-	lastInputData_{},
-	inputTable_{}
+constexpr char config_file_name[] = "keyconf.kcnf";
+
+namespace
+{
+	//シグネチャ"kcnf"
+	//バージョン番号
+	//データ数
+	//先頭のデータサイズ固定部分を「ヘッダ」として書き込むために
+	//構造体を定義します
+	struct KeyConfHeader
+	{
+		char signature[4];//シグネチャ
+		float version;//バージョン番号
+		int dataNum;//データ数
+	};
+}
+
+void Input::InitializeInputTable()
 {
 	//イベント名を添え字にして、右辺値に実際の入力種別と入力コードの配列を置く
 	inputTable_["ok"] = { { PeripheralType::keyboard, KEY_INPUT_RETURN },
@@ -33,6 +48,15 @@ Input::Input() :
 
 	inputTable_["right"] = { { PeripheralType::keyboard, KEY_INPUT_RIGHT },
 							{PeripheralType::pad1,PAD_INPUT_RIGHT } };
+}
+
+Input::Input() :
+	inputData_{},
+	lastInputData_{},
+	inputTable_{}
+{
+	InitializeInputTable();
+	Load();
 
 	editableEventNames_ = { "ok","pause","shot","slow","bomb" };
 
@@ -60,7 +84,7 @@ void Input::Update()
 		auto& input = inputData_[inputInfo.first];//inputInfo.firstには"ok"等がはいってる
 		//inputを書き換えると、inputData_のそのイベントが押されてるかどうかを
 		//書き換えることになる
-		for (const auto& state : inputInfo.second){//InputStateのベクタを回す
+		for (const auto& state : inputInfo.second) {//InputStateのベクタを回す
 			//子のループはInputState配列のループなので
 			//まず、入力種別をチェックします　
 			switch (state.type)
@@ -100,3 +124,71 @@ bool Input::IsTriggerd(const char* name) const
 {
 	return inputData_.at(name) && !lastInputData_.at(name);
 }
+
+void Input::Save()
+{
+	FILE* fp = nullptr;
+	auto err = fopen_s(&fp, "keyconf.kcnf", "wb");
+	if (fp == nullptr)
+	{
+		return;
+	}
+	KeyConfHeader header = {};
+	header.signature[0] = 'k';
+	header.signature[1] = 'c';
+	header.signature[2] = 'n';
+	header.signature[3] = 'f';
+	header.version = 1.0f;
+	header.dataNum = inputTable_.size();
+
+	fwrite(&header, sizeof(header), 1, fp);
+
+	//個別のデータ
+	for (const auto& info : inputTable_)
+	{
+		const auto& name = info.first;
+		byte nameLen = name.size();//イベント名(文字列数)
+		fwrite(&nameLen, sizeof(nameLen), 1, fp);//文字サイズの書き込み
+		fwrite(name.data(), nameLen, 1, fp);//文字データの書き込み(イベント名)
+		
+		const auto& data = info.second;
+		byte dataNum = data.size();
+		fwrite(&dataNum, sizeof(dataNum), 1, fp);
+		fwrite(data.data(), data.size() * sizeof(InputState), 1, fp);
+	}
+
+	fclose(fp);
+}
+
+void Input::Load()
+{
+	auto fileName = StringFunctions::WStringFromString(config_file_name);
+	int handle = FileRead_open(fileName.c_str());
+	KeyConfHeader header = {};
+	FileRead_read(&header, sizeof(header), handle);
+	for (int i = 0; i < header.dataNum; ++i)
+	{
+		byte nameSize = 0;//名前の文字列数がわからないため、1バイトロード
+		FileRead_read(&nameSize, sizeof(nameSize), handle);
+
+		std::string name;//イベント名受け取り用
+		name.resize(nameSize);//受け取るために名前文字列の領域を確保
+		//確保した名前領域にセーブされているイベント名をコピする
+		FileRead_read(name.data(), name.size(), handle);
+		//その名前がinputTable_にあるかどうかをチェック
+		if (inputTable_.contains(name))
+		{
+			//もしあったらそのテーブルデータを取得します
+			auto& info = inputTable_.at(name);
+			byte dataNum = 0;
+			FileRead_read(&dataNum, sizeof(dataNum), handle);//データ数を取得
+			//元のvectorサイズを超えないようにminで小さいほうを選ぶようにする
+			dataNum = min(dataNum, info.size());//inputTable_[name]内のvectorをオーバーしないように
+			
+			//必要な分だけデータをファイルからリードしてコピー
+			FileRead_read(info.data(), dataNum * sizeof(InputState), handle);
+		}
+	}
+	FileRead_close(handle);//クローズを忘れないように！
+}
+

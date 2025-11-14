@@ -38,11 +38,17 @@ private:
 	std::map<std::string,std::vector<InputState>> inputTable_;	//イベント名と実際の入力の対応表
 	//仮の入力テーブル
 	//キーコンフィグが終わったら破棄される
-	std::map<std::string, std::vector<InputState>> tempInputTable_;
+	std::map<std::string, std::vector<InputState>> tempInputTable_;//一時的な入力対応テーブル
 	std::map<std::string, bool>inputData_;//実際に入力されたかどうかのデータ
 	std::map<std::string, bool>lastInputData_;//前のフレームに入力されたかどうかのデータ
 	//キーコンフィグできるイベント名配列
 	std::vector<std::string> editableEventNames_;
+
+	/// <summary>
+	/// 入力テーブルの初期化
+	/// </summary>
+	void InitializeInputTable();
+
 public:
 	Input();
 
@@ -64,5 +70,8 @@ public:
 	/// <param name="name">イベント名</param>
 	/// <returns>今押された瞬間 : true / 押されてないor押しっぱなし:false</returns>
 	bool IsTriggerd(const char* name)const;
+
+	void Save();
+	void Load();
 };
 

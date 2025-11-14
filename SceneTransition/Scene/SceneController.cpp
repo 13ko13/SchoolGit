@@ -1,5 +1,5 @@
 #include "SceneController.h"
-#include "Scene.h"
+#include "../Scene.h"
 
 void SceneController::ResetScene(std::shared_ptr<Scene> scene)
 {

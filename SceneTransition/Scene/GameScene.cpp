@@ -5,6 +5,7 @@
 #include "SceneController.h"
 #include <cassert>
 #include "../Application.h"
+#include "../Game/Stage.h"
 #include <cmath>
 #include "PauseScene.h"
 
@@ -74,6 +75,10 @@ GameScene::GameScene(SceneController& controller) :
 	assert(explosionH_ >= 0);
 
 	frame_ = fade_interval;
+
+	//ステージデータのロード
+	stage_ = std::make_shared<Stage>();
+	stage_->Load(1);
 }
 
 void GameScene::FadeInUpdate(Input&)

@@ -1,7 +1,9 @@
 #pragma once
 #include "../Scene.h"
 #include "../Geometry.h"
+#include <memory>
 
+class Stage;
 class GameScene : public  Scene
 {
 private:
@@ -22,6 +24,8 @@ private:
 	int enemyExplosionFrame = 0;
 	Position2 enemyVel_;//敵の速度
 	Bullet bullets_[128];//敵の弾
+
+	std::shared_ptr<Stage> stage_;//ステージデータ
 
 	int playerH_;//プレイヤー画像(4x2)
 	int shotH_;//プレイヤーの弾(敵の弾も兼用)

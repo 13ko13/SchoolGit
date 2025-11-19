@@ -13,9 +13,9 @@ namespace
 	//構造体を定義します
 	struct KeyConfHeader
 	{
-		char signature[4];//シグネチャ
-		float version;//バージョン番号
-		int dataNum;//データ数
+		char signature[4];//シグネチャ4バイト
+		float version;//バージョン番号4バイト
+		int dataNum;//データ数4バイト
 	};
 }
 
@@ -141,19 +141,22 @@ void Input::Save()
 	header.version = 1.0f;
 	header.dataNum = inputTable_.size();
 
-	fwrite(&header, sizeof(header), 1, fp);
+	fwrite(&header, sizeof(header), 1, fp);//12バイトまるまる書き込んでいる
 
 	//個別のデータ
 	for (const auto& info : inputTable_)
 	{
 		const auto& name = info.first;
 		byte nameLen = name.size();//イベント名(文字列数)
+		//文字列を書き込む際は先頭1バイトを「文字列数」にすることをお勧めします
 		fwrite(&nameLen, sizeof(nameLen), 1, fp);//文字サイズの書き込み
 		fwrite(name.data(), nameLen, 1, fp);//文字データの書き込み(イベント名)
 		
 		const auto& data = info.second;
 		byte dataNum = data.size();
+		//データのサイズをあらかじめ書き込んでおく
 		fwrite(&dataNum, sizeof(dataNum), 1, fp);
+		//データをまとめて書き込む(サイズがわかってるから一気に書き込める)
 		fwrite(data.data(), data.size() * sizeof(InputState), 1, fp);
 	}
 

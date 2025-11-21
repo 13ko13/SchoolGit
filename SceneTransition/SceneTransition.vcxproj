@@ -139,11 +139,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Game\Actor.cpp" />
     <ClCompile Include="Application.cpp" />
     <ClCompile Include="Game\Enemy.cpp" />
     <ClCompile Include="Game\BulletFactory.cpp" />
     <ClCompile Include="Game\EnemyFactory.cpp" />
     <ClCompile Include="Game\Player.cpp" />
+    <ClCompile Include="Game\PataPata.cpp" />
     <ClCompile Include="Scene\GameoverScene.cpp" />
     <ClCompile Include="Scene\GameScene.cpp" />
     <ClCompile Include="Geometry.cpp" />
@@ -154,16 +156,20 @@
     <ClCompile Include="Scene.cpp" />
     <ClCompile Include="Scene\SceneController.cpp" />
     <ClCompile Include="Game\Stage.cpp" />
+    <ClCompile Include="Game\Strider.cpp" />
     <ClCompile Include="StringFunctions.cpp" />
     <ClCompile Include="Scene\TitleScene.cpp" />
+    <ClCompile Include="Game\Zako.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Game\Actor.h" />
     <ClInclude Include="Application.h" />
     <ClInclude Include="Game\Enemy.h" />
     <ClInclude Include="Game\BulletFactory.h" />
     <ClInclude Include="Game\EnemyFactory.h" />
     <ClInclude Include="game.h" />
     <ClInclude Include="Game\Player.h" />
+    <ClInclude Include="Game\PataPata.h" />
     <ClInclude Include="Scene\GameoverScene.h" />
     <ClInclude Include="Scene\GameScene.h" />
     <ClInclude Include="Geometry.h" />
@@ -173,8 +179,10 @@
     <ClInclude Include="Scene.h" />
     <ClInclude Include="Scene\SceneController.h" />
     <ClInclude Include="Game\Stage.h" />
+    <ClInclude Include="Game\Strider.h" />
     <ClInclude Include="StringFunctions.h" />
     <ClInclude Include="Scene\TitleScene.h" />
+    <ClInclude Include="Game\Zako.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

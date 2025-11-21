@@ -15,5 +15,6 @@ public:
 	void Load(int stageNo);
 	Size MapSize() const;
 	uint8_t GetData(int xidx, int yidx);
+	const std::vector<uint8_t>& GetAllData() const;
 };
 

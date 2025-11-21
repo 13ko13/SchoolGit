@@ -68,8 +68,7 @@ GameScene::GameScene(SceneController& controller) :
 	cloudH_ = LoadGraph(L"img/game/cloud.png");
 	assert(cloudH_ >= 0);
 
-	enemyH_ = LoadGraph(L"img/game/zako.png");
-	assert(enemyH_ >= 0);
+	
 
 	explosionH_ = LoadGraph(L"img/game/explosion.png");
 	assert(explosionH_ >= 0);
@@ -335,7 +334,7 @@ void GameScene::NormalDraw()
 	DrawRectRotaGraph(enemy_.pos.x, enemy_.pos.y,
 		enemy_cut_w * enemyImgIdx, enemy_cut_h * 0,
 		enemy_cut_w, enemy_cut_h,
-		enemy_scale, 0.0f, enemyH_, true);
+		enemy_scale, 0.0f, zakoH_, true);
 
 	//敵爆発表示
 	int enemyExpOffsetX = GetRand(10) - 5;
@@ -348,6 +347,42 @@ void GameScene::NormalDraw()
 			exp_cut_w * idx, 0,
 			exp_cut_w, exp_cut_h,
 			exp_scale, 0.0f, explosionH_, true);
+	}
+
+	//ロードした敵の表示
+	auto mapSize = stage_->MapSize();
+	const auto& mapData = stage_->GetAllData();
+	//行をループ
+	for (int idxY = 0; idxY < mapSize.h; ++idxY)
+	{
+		//列をループ(0～19)
+		for (int idxX = 0; idxX < mapSize.w; ++idxX)
+		{
+			//配置情報から場所に対応した敵のタイプを取得する(0は敵なし)
+			auto enemyType = mapData[idxX + idxY * mapSize.w];
+			if (enemyType > 0)
+			{
+				int posX = idxX * 32 + 16;//敵のX座標
+				int posY = 480 - 32 - idxY * 32 + 16;//敵のY座標
+				switch (enemyType)
+				{
+				case 1 : //雑魚
+					DrawRectRotaGraph(
+						posX,posY,
+						0, 0, enemy_cut_w, enemy_cut_h, 
+						enemy_scale, 0.0,
+						zakoH_, true);
+					break;
+				case 2://パタパタ
+					DrawRectRotaGraph(
+						posX,posY,
+						0, 0, 32, enemy_cut_h,
+						enemy_scale, 0.0,
+						papataH_, true);
+				}
+				
+			}
+		}
 	}
 }
 

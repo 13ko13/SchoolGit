@@ -46,19 +46,38 @@ void Stage::Load(int stageNo)
 
 	//データを受けとる準備をします
 	data_.resize(header.size);
-	std::vector<uint8_t> rawData;//生データ
+	//生データ(データをひっくり返すために一時的に用意
+	std::vector<uint8_t> rawData;
 	rawData.resize(header.size);
 
 	FileRead_read(rawData.data(), data_.size() * sizeof(uint8_t), handle);
 
 	//データが上から下になっているが、縦シューは下から上に進むために
 	//データを上下逆にする
+	//データを上下逆にする目的
+	//作ったマップと実際のゲーム進行をシンクロさせるため
+	//そのままのデータだと、ゲーム開始地点のデータが一番下にあるため
+	//データ先頭から遠い状態になってしまう
+	//これは扱いづらいし、メモリ効率的にも良くない
 	for (int y = 0; y < header.height; ++y)
 	{
 		int reverseY = header.height - y;//これだと範囲がh～1であるためさらに1を引きます
 		reverseY -= 1;
+		//copy_nについて
+		//algorithmの1つなのでalgorithmをincludeする必要がある
+		//copy_n(コピー元の開始イテレータ(アドレス),何個コピーするか,
+		// コピー先の開始テレータ(アドレス)
+		//イテレータ(反復子)とは
+		//データ集合の要素に順番にアクセスするための仕組み
+		//無印のcopyは範囲を指定、copy_nはその数を指定
 		std::copy_n(&rawData[y * header.width],
 		header.width,
+		//vectorは[]オペレータオーバーロードによって、実データのn番目の要素の値を返してきます。
+		//今回はそのアドレスが欲しいので　帰ってきた値に&をつけて、n番目の要素のアドレスを
+		//取得します。この時に
+		//先頭アドレスを y * header.widthとしているがこれは　、目的の「行の先頭」を返す
+		//１行下のデータはどこにあるかというと、今の
+		//行数を今のアドレスに足したものになる。
 		&data_[reverseY * header.width]);
 	}
 
@@ -73,4 +92,9 @@ Size Stage::MapSize() const
 uint8_t Stage::GetData(int xidx, int yidx)
 {
 	return data_[yidx * dataSize_.w + xidx];
+}
+
+const std::vector<uint8_t>& Stage::GetAllData() const
+{
+	return data_;
 }

@@ -1,6 +1,8 @@
 #include "Input.h"
 #include <DxLib.h>
 #include "StringFunctions.h"
+#include "Game/Actor.h"
+#include "Game/Enemy.h"
 
 constexpr char config_file_name[] = "keyconf.kcnf";
 
@@ -109,6 +111,8 @@ void Input::Update()
 		}
 	}
 }
+
+
 
 bool Input::IsPressed(const char* name) const
 {

@@ -29,7 +29,8 @@ private:
 
 	int playerH_;//プレイヤー画像(4x2)
 	int shotH_;//プレイヤーの弾(敵の弾も兼用)
-	int enemyH_;//雑魚敵の画像
+	int zakoH_;//雑魚敵の画像
+	int papataH_;//パタパタ敵の画像
 	int explosionH_;//爆発画像
 
 	int backH_;//1枚絵
